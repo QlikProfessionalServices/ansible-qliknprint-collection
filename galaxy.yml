@@ -1,0 +1,17 @@
+namespace: qlik
+name: nprinting
+version: 0.1.0
+readme: README.md
+authors:
+  - Adam Haydon (https://github.com/ahaydon)
+description: Collection of roles for managing Qlik NPrinting deployments
+license:
+  - MIT
+tags:
+  - qlik
+  - nprinting
+repository: https://github.com/QlikProfessionalServices/ansible-qliknprint-collection
+documentation: https://github.com/QlikProfessionalServices/ansible-qliknprint-collection/wiki
+homepage: https://github.com/QlikProfessionalServices/ansible-qliknprint-collection
+issues: https://github.com/QlikProfessionalServices/ansible-qliknprint-collection/issues
+build_ignore: []

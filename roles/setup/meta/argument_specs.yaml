@@ -1,0 +1,66 @@
+---
+argument_specs:
+  main:
+    short_description: Run the Qlik NPrinting setup
+    options:
+      server_setup_path:
+        type: path
+        required: true
+        description: Path of the Qlik NPrinting server setup file.
+
+      engine_setup_path:
+        type: path
+        required: true
+        description: Path of the Qlik NPrinting engine setup file.
+
+      # Common setup arguments
+
+      accept_eula:
+        type: bool
+        required: true
+        description: Accepts the Qlik User License Agreement.
+
+      service_username:
+        type: str
+        required: true
+        description: Adds the username to run the Qlik NPrinting services.
+
+      service_password:
+        type: str
+        required: true
+        description: Adds the password to run the services.
+
+      # Server setup arguments
+
+      database_password:
+        type: str
+        required: true
+        description: Adds the password for the database superuser that creates the user that runs
+                     the database.
+
+      admin_email:
+        type: str
+        required: true
+        description: Adds the email address for the web console admin.
+
+      admin_username:
+        type: str
+        required: true
+        description: Adds the login username for the web console admin.
+
+      admin_password:
+        type: str
+        required: true
+        description: Adds the login password for the web console admin.
+
+      # Engine setup arguments
+
+      engine_certs_password:
+        type: str
+        required: true
+        description: Adds a password to encrypt certificate exchange for TLS certificates.
+
+      server_hostname:
+        type: str
+        required: true
+        description: Adds the name of the computer where Qlik NPrinting Server is installed.

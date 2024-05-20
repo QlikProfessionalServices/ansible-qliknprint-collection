@@ -1,0 +1,40 @@
+---
+- name: Check eula has been accepted
+  ansible.builtin.fail:
+    msg: accept_eula variable must be truthy
+  when: accept_eula is not true
+
+- name: Add NPrinting service account to Log on as a service
+  ansible.windows.win_user_right:
+    name: SeServiceLogonRight
+    users:
+      - "{{ service_username }}"
+    action: add
+
+- name: Install Qlik NPrinting Server
+  ansible.windows.win_package:
+    creates_service: QlikNPrintingRepoService
+    path: "{{ server_setup_path }}"
+    arguments:
+      - /install
+      - /quiet
+      - accept-eula={{ accept_eula | int }}
+      - service-username=.\{{ service_username }}
+      - service-password={{ service_password }}
+      - database-password={{ database_password }}
+      - admin-email={{ admin_email }}
+      - admin-username={{ admin_username }}
+      - admin-password={{ admin_password }}
+
+- name: Install Qlik NPrinting Engine
+  ansible.windows.win_package:
+    creates_service: QlikNPrintingEngine
+    path: "{{ engine_setup_path }}"
+    arguments:
+      - /install
+      - /quiet
+      - accept-eula={{ accept_eula | int }}
+      - service-username=.\{{ service_username }}
+      - service-password={{ service_password }}
+      - engine-certs-password={{ engine_certs_password }}
+      - server-hostname={{ server_hostname }}

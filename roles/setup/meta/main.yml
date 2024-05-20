@@ -1,0 +1,17 @@
+galaxy_info:
+  author: Adam Haydon (https://github.com/ahaydon)
+  description: Qlik NPrinting setup
+  company: Qlik
+  license: MIT
+
+  min_ansible_version: 2.4
+
+  platforms:
+    - name: Windows
+      versions:
+        - 2016
+        - 2019
+
+  galaxy_tags:
+    - qlik
+    - nprinting
