@@ -1,0 +1,3 @@
+---
+settings_validate_certs: true
+settings_hostname: "{{ ansible_host }}"

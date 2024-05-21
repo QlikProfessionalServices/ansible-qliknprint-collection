@@ -1,0 +1,21 @@
+---
+argument_specs:
+  main:
+    short_description: Main entrypoint for Qlik NPrinting settings role
+    options:
+      settings_license_key:
+        type: str
+        required: true
+        description: License key to use for the server.
+
+      settings_validate_certs:
+        type: bool
+        default: true
+        description:
+          - If C(no), SSL certificates will not be validated.
+          - This should only be used on personally controlled sites using self-signed certificates.
+
+      settings_hostname:
+        type: str
+        default: "{{ ansible_host }}"
+        description: Hostname to use when calling Qlik Sense repository APIs.

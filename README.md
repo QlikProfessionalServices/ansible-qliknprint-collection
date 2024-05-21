@@ -7,3 +7,4 @@ A collection of Ansible roles for managing Qlik NPrinting.
 Roles included in this collection:
 
 - [Qlik NPrinting setup](roles/setup/README.md)
+- [Qlik NPrinting settings](roles/settings/README.md)

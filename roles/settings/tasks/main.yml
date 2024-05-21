@@ -1,0 +1,67 @@
+---
+- name: Get NPrinting login settings
+  ansible.windows.win_uri:
+    url: https://{{ settings_hostname }}:4993/npe/login-settings/webconsole
+    validate_certs: "{{ settings_validate_certs }}"
+  register: login_settings
+
+- name: Login to NPrinting web console
+  ansible.windows.win_uri:
+    url: https://{{ settings_hostname }}:4993/login
+    method: POST
+    validate_certs: "{{ settings_validate_certs }}"
+    content_type: application/json; charset=utf-8
+    headers:
+      Cookie: "{{ login_settings.set_cookie | regex_findall('(?:^|,)(.+?);', '\\1') | join(';') }}"
+      X-XSRF-TOKEN: "{{ login_settings.set_cookie | regex_search('NPWEBCONSOLE_XSRF-TOKEN=(.+?);', '\\1') | first }}"
+    body: '{"username":"aay@qlik.com","password":"Qlik1234"}'
+  register: web_login
+
+- name: Set login facts
+  ansible.builtin.set_fact:
+    nprinting_login_cookie: "{{ web_login.set_cookie
+      | regex_search(',NPWEBCONSOLE_SESSION=(.+userlogin.+?);', '\\1')
+      | first }}"
+    nprinting_xsrf_token: "{{ web_login.set_cookie
+      | regex_search('NPWEBCONSOLE_XSRF-TOKEN=(.+?);', '\\1')
+      | first }}"
+
+- name: Get Qlik NPrinting license
+  ansible.windows.win_uri:
+    url: https://{{ settings_hostname }}:4993/npe/license
+    validate_certs: "{{ settings_validate_certs }}"
+    headers: &uri_headers
+      Cookie: >-
+        NPWEBCONSOLE_XSRF-TOKEN={{ nprinting_xsrf_token }};
+        NPWEBCONSOLE_SESSION={{ nprinting_login_cookie }};
+      X-XSRF-TOKEN: "{{ nprinting_xsrf_token }}"
+    return_content: yes
+  register: np_license
+
+- name: Activate Qlik NPrinting license
+  ansible.windows.win_uri:
+    url: https://{{ settings_hostname }}:4993/npe/license
+    method: PUT
+    validate_certs: "{{ settings_validate_certs }}"
+    content_type: application/json; charset=utf-8
+    headers: *uri_headers
+    body:
+      licenseKey: null
+      controlNumber: null
+      userName: null
+      organization: null
+      lefFile: null
+      model: SignedKey
+      signedKey: "{{ settings_license_key }}"
+      hasValidLicense: false
+      isConnected: false
+      isLicensed: false
+      isExpired: false
+      maxUsers: 0
+      maxDevelopers: 0
+      maxEngines: 0
+      getCurrentUsersCount: 1
+      getCurrentDevelopersCount: 0
+      getCurrentEnginesCount: 0
+  when: np_license.json.result.signedKey != settings_license_key
+  changed_when: true
