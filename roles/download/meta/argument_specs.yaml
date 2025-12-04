@@ -1,0 +1,35 @@
+---
+argument_specs:
+  main:
+    short_description: Main entrypoint for Qlik NPrinting download role
+    options:
+      release_name:
+        type: str
+        required: false
+        description:
+          - Name of the Qlik NPrinting release to download. This value must match the name of a
+            release published at https://github.com/qlik-download/nprinting/releases.
+
+      download_path:
+        type: path
+        default: "{{ lookup('ansible.builtin.env', 'HOME') }}/Downloads"
+        description:
+          - Path to download the Qlik NPrinting package to.
+
+      setup_path:
+        type: path
+        default: "{{ download_path }}/{{ release_name }}/QlikNPrintingServer_x64.exe"
+        description:
+          - Path of the Qlik NPrinting Server setup file.
+
+      update_path:
+        type: path
+        default: "{{ download_path }}/{{ release_name }}/QlikNPrintingEngine_x64.exe"
+        description:
+          - Path of the Qlik NPrinting Engine setup file.
+
+      github_token:
+        type: str
+        required: false
+        description:
+          - Authentication token to allow for increased rate limit on GitHub APIs.

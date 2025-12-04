@@ -1,0 +1,109 @@
+---
+- name: Lookup Qlik NPrinting release # noqa: run-once[task]
+  delegate_to: localhost
+  run_once: yes
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/qlik-download/nprinting/releases?page=1
+    headers:
+      Authorization: "{{ 'Bearer ' + github_token if github_token is defined else omit }}"
+  register: nprint_releases
+
+- name: Page through releases # noqa: run-once[task]
+  delegate_to: localhost
+  run_once: yes
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/qlik-download/nprinting/releases?page={{ item }}
+    headers:
+      Authorization: "{{ 'Bearer ' + github_token if github_token is defined else omit }}"
+  register: nprint_releases_pages
+  vars:
+    latest_result: "{{ nprint_releases_pages | default(nprint_releases) }}"
+    page_count: "{{ latest_result.link | regex_search('page=(\\d+)>; rel=\"last\"', '\\1') | first | int }}"
+  loop: "{{ range(2, page_count | int) | list }}"
+  when: latest_result is not skipped and latest_result.json
+    | selectattr('prerelease', 'equalto', false)
+    | selectattr('name', 'equalto', release_name)
+    | length == 0
+  delay: 1
+
+- name: Set release facts
+  vars:
+    results: "{{ [nprint_releases] + nprint_releases_pages.results }}"
+    release: "{{ results | map(attribute='json', default=[]) | flatten
+      | selectattr('prerelease', 'equalto', false)
+      | selectattr('name', 'equalto', release_name)
+      | first }}"
+  ansible.builtin.set_fact:
+    release_name: "Qlik NPrinting {{ release.name }}"
+    server_download_url: "{{ release.assets
+      | selectattr('name', 'equalto', 'QlikNPrintingServer_x64.exe')
+      | map(attribute='browser_download_url')
+      | flatten
+      | first }}"
+    server_checksum_url: "{{ release.assets
+      | selectattr('name', 'equalto', 'QlikNPrintingServer_x64.exe.md5')
+      | map(attribute='browser_download_url')
+      | flatten
+      | first }}"
+    engine_download_url: "{{ release.assets
+      | selectattr('name', 'equalto', 'QlikNPrintingEngine_x64.exe')
+      | map(attribute='browser_download_url')
+      | flatten
+      | first }}"
+    engine_checksum_url: "{{ release.assets
+      | selectattr('name', 'equalto', 'QlikNPrintingEngine_x64.exe.md5')
+      | map(attribute='browser_download_url')
+      | flatten
+      | first }}"
+
+- name: Create setup directories # noqa: run-once[task]
+  delegate_to: localhost
+  run_once: yes
+  ansible.builtin.file:
+    path: "{{ server_setup_path | dirname }}"
+    state: directory
+    mode: "0700"
+
+- name: Download Qlik NPrinting setup files # noqa: run-once[task]
+  delegate_to: localhost
+  run_once: yes
+  ansible.builtin.get_url:
+    url: "{{ item.url }}"
+    dest: "{{ item.dest }}"
+    checksum: "{{ item.checksum }}"
+    mode: "0644"
+  loop:
+    - url: "{{ server_download_url }}"
+      dest: "{{ server_setup_path }}"
+      checksum: "md5:{{ lookup('ansible.builtin.url', server_checksum_url) if server_checksum_url | length > 0 }}"
+    - url: "{{ engine_download_url }}"
+      dest: "{{ engine_setup_path }}"
+      checksum: "md5:{{ lookup('ansible.builtin.url', engine_checksum_url) if engine_checksum_url | length > 0 }}"
+  when: item.url | length > 0
+  register: downloads
+
+- name: Copy setup file to host
+  ansible.windows.win_copy:
+    dest: '{{ ansible_facts["user_dir"] }}\Downloads\{{ item | basename }}'
+    src: "{{ item }}"
+  loop: "{{ downloads.results | selectattr('dest', 'defined') | map(attribute='dest') | flatten }}"
+
+- name: Set setup path
+  ansible.builtin.set_fact:
+    server_setup_path: '{{ ansible_facts["user_dir"] }}\Downloads\{{ server_setup_path | basename }}'
+  when:
+    - server_setup_path is defined
+    - downloads.results
+        | selectattr('item.dest', 'equalto', server_setup_path)
+        | selectattr('skipped', 'undefined')
+        | length > 0
+
+- name: Set patch path
+  ansible.builtin.set_fact:
+    engine_setup_path: '{{ ansible_facts["user_dir"] }}\Downloads\{{ engine_setup_path | basename }}'
+  when:
+    - engine_setup_path is defined
+    - downloads.results
+        | selectattr('item.dest', 'equalto', engine_setup_path)
+        | selectattr('skipped', 'undefined')
+        | length > 0

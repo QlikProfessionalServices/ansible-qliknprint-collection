@@ -1,0 +1,4 @@
+---
+download_path: "{{ lookup('ansible.builtin.env', 'HOME') }}/Downloads"
+server_setup_path: "{{ download_path }}/{{ release_name }}/QlikNPrintingServer_x64.exe"
+engine_setup_path: "{{ download_path }}/{{ release_name }}/QlikNPrintingEngine_x64.exe"
