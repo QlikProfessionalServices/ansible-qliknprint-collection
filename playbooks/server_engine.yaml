@@ -1,0 +1,44 @@
+---
+- name: Deploy Qlik NPrinting
+  hosts: nprinting_server
+
+  pre_tasks:
+    - name: Ensure Qlik NPrinting service account exists
+      ansible.windows.win_user:
+        name: "{{ service_username }}"
+        password: "{{ service_password }}"
+        password_never_expires: yes
+        user_cannot_change_password: yes
+        groups:
+          - Administrators
+        groups_action: add
+
+    - name: Ensure Qlik NPrinting admin account exists
+      ansible.windows.win_user:
+        name: "{{ admin_username }}"
+        password: "{{ admin_password }}"
+        password_never_expires: yes
+        groups:
+          - Administrators
+        groups_action: add
+
+  roles:
+    - role: qlik.nprinting.download
+      tags: prepare
+    - role: qlik.nprinting.setup
+      tags: install
+    - role: qlik.nprinting.settings
+      settings_validate_certs: no
+      tags: configure
+
+  tasks:
+    - name: Firewall rule to allow access to NPrinting web console
+      community.windows.win_firewall_rule:
+        name: Qlik NPrinting Web Console
+        group: Qlik NPrinting
+        localport: 4993
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: yes
