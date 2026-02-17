@@ -1,0 +1,48 @@
+---
+- name: Get Qlik NPrinting installer version info
+  check_mode: no
+  ansible.windows.win_powershell:
+    script: |
+      $result = @{}
+      if (${{ server_setup_path is defined }}) {
+        $result.Server = (Get-Item '{{ server_setup_path | default('') }}').VersionInfo
+      }
+      if (${{ engine_setup_path is defined }}) {
+        $result.Engine = (Get-Item '{{ engine_setup_path | default('') }}').VersionInfo
+      }
+      $Ansible.Result = $result
+  register: install_version
+  changed_when: false
+
+- name: Check installed release and patch
+  check_mode: no
+  ansible.windows.win_powershell:
+    script: |
+      $packages = Get-Package -Name 'Qlik NPrinting *' -ProviderName Programs -ErrorAction Ignore
+      $result = @{}
+      $result.Server = $packages | Where-Object Name -Match 'Qlik NPrinting Server'
+      $result.Engine = $packages | Where-Object Name -Match 'Qlik NPrinting Engine'
+      $Ansible.Result = $result
+  register: installed_version
+  changed_when: false
+
+- name: Set install facts
+  ansible.builtin.set_fact:
+    server_version: "{{ install_version.result.Server.ProductVersion | default('0.0.0') }}"
+    engine_version: "{{ install_version.result.Engine.ProductVersion | default('0.0.0') }}"
+    installed_server: "{{ installed_version.result.Server.Version | default('0.0.0') }}"
+    installed_engine: "{{ installed_version.result.Engine.Version | default('0.0.0') }}"
+
+- name: Check EULA has been accepted
+  ansible.builtin.assert:
+    that: accept_eula is true
+    fail_msg: "You must accept the EULA (C(accept_eula: true)) to install Qlik NPrinting."
+    success_msg: EULA has been accepted.
+  when: accept_eula is defined
+
+- name: Check NPrinting version can be installed
+  ansible.builtin.assert:
+    that:
+      - server_version is version(installed_server, 'ge')
+      - engine_version is version(installed_engine, 'ge')
+    fail_msg: Setup version must be newer than installed version.

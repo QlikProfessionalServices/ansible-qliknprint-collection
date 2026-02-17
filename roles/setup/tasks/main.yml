@@ -1,8 +1,7 @@
 ---
-- name: Check eula has been accepted
-  ansible.builtin.fail:
-    msg: accept_eula variable must be truthy
-  when: accept_eula is not true
+- name: Include check tasks
+  ansible.builtin.include_tasks:
+    file: checks.yaml
 
 - name: Add NPrinting service account to Log on as a service
   ansible.windows.win_user_right:
@@ -38,3 +37,46 @@
       - service-password={{ service_password }}
       - engine-certs-password={{ engine_certs_password }}
       - server-hostname={{ server_hostname }}
+
+- name: Stop Qlik NPrinting services
+  ansible.windows.win_service:
+    name: "{{ item }}"
+    state: stopped
+  loop:
+    - QlikNPrintingEngine
+    - QlikNPrintingScheduler
+    - QlikNPrintingWebEngine
+    - QlikNPrintingLicenseService
+    - QlikNPrintingAuditService
+    - QlikNPrintingMessagingService
+    - QlikNPrintingRepoService
+  when:
+    - installed_server != '0.0.0' or installed_engine != '0.0.0'
+    - server_version is version(installed_server, 'gt')
+      or engine_version is version(installed_engine, 'gt')
+
+- name: Upgrade Qlik NPrinting Server
+  ansible.windows.win_package:
+    path: "{{ server_setup_path }}"
+    arguments:
+      - /install
+      - /quiet
+      - accept-eula={{ accept_eula | int }}
+      - service-username=.\{{ service_username }}
+      - service-password={{ service_password }}
+  when:
+    - installed_server != '0.0.0'
+    - server_version is version(installed_server, 'gt')
+
+- name: Upgrade Qlik NPrinting Engine
+  ansible.windows.win_package:
+    path: "{{ engine_setup_path }}"
+    arguments:
+      - /install
+      - /quiet
+      - accept-eula={{ accept_eula | int }}
+      - service-username=.\{{ service_username }}
+      - service-password={{ service_password }}
+  when:
+    - installed_engine != '0.0.0'
+    - engine_version is version(installed_engine, 'gt')
