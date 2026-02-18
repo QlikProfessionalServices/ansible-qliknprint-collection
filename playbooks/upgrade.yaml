@@ -1,0 +1,13 @@
+---
+- name: Upgrade Qlik NPrinting
+  hosts: nprinting_server
+
+  roles:
+    - role: qlik.nprinting.download
+      tags: prepare
+
+  tasks:
+    - name: Import upgrade tasks from setup role
+      ansible.builtin.import_role:
+        name: qlik.nprinting.setup
+        tasks_from: upgrade

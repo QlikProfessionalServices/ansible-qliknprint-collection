@@ -64,3 +64,33 @@ argument_specs:
         type: str
         required: true
         description: Adds the name of the computer where Qlik NPrinting Server is installed.
+
+  upgrade:
+    short_description: Run the Qlik NPrinting setup
+    options:
+      server_setup_path:
+        type: path
+        required: true
+        description: Path of the Qlik NPrinting server setup file.
+
+      engine_setup_path:
+        type: path
+        required: true
+        description: Path of the Qlik NPrinting engine setup file.
+
+      # Common setup arguments
+
+      accept_eula:
+        type: bool
+        required: true
+        description: Accepts the Qlik User License Agreement.
+
+      service_username:
+        type: str
+        required: true
+        description: Adds the username to run the Qlik NPrinting services.
+
+      service_password:
+        type: str
+        required: true
+        description: Adds the password to run the services.

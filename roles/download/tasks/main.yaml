@@ -34,7 +34,6 @@
       | selectattr('name', 'equalto', release_name)
       | first }}"
   ansible.builtin.set_fact:
-    release_name: "Qlik NPrinting {{ release.name }}"
     server_download_url: "{{ release.assets
       | selectattr('name', 'equalto', 'QlikNPrintingServer_x64.exe')
       | map(attribute='browser_download_url')
