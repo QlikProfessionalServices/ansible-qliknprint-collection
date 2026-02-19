@@ -18,7 +18,7 @@
   check_mode: no
   ansible.windows.win_powershell:
     script: |
-      $packages = Get-Package -Name 'Qlik NPrinting *' -ProviderName Programs -ErrorAction Ignore
+      $packages = Get-Package -Name 'Qlik NPrinting *' -ErrorAction Ignore
       $result = @{}
       $result.Server = $packages | Where-Object Name -Match 'Qlik NPrinting Server'
       $result.Engine = $packages | Where-Object Name -Match 'Qlik NPrinting Engine'
